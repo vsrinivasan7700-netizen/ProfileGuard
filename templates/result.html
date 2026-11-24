@@ -1,0 +1,352 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Result - ProfileGuard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Profile Analysis Report</h1>
+    <p>Machine Learning and Blockchain Verification Results</p>
+</div>
+
+<div class="result-container" id="resultContainer">
+
+    <div class="result-banner">
+        <div class="success-icon">✓</div>
+        <h2>Analysis Completed Successfully</h2>
+        <p>Your social media profile analysis is complete.</p>
+    </div>
+
+    <div class="result-section">
+
+        <h2>Analysis Overview</h2>
+
+        <div class="result-grid">
+
+            <div class="result-item">
+                <span>Analysis ID</span>
+                <strong id="analysisId">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Profile ID</span>
+                <strong id="profileId">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Risk Score</span>
+                <strong id="riskScore">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Risk Category</span>
+                <strong id="riskCategory">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>ML Prediction</span>
+                <strong id="prediction">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Fake Probability</span>
+                <strong id="fakeProbability">-</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="result-section">
+
+        <h2>Blockchain Verification</h2>
+
+        <div class="result-grid">
+
+            <div class="result-item">
+                <span>Blockchain Block Index</span>
+                <strong id="blockIndex">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Blockchain Validation</span>
+                <strong id="chainStatus">-</strong>
+            </div>
+
+            <div class="result-item">
+                <span>Database Status</span>
+                <strong id="databaseStatus">-</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="result-notice">
+        <h3>Important Notice</h3>
+        <p id="resultNotice">
+            Analysis results are based on supplied profile information
+            and patterns in the training dataset.
+        </p>
+    </div>
+
+    <div class="result-actions">
+
+        <a href="/analyze" class="primary-button">
+            Analyze Another Profile
+        </a>
+
+        <a href="/history" class="secondary-button">
+            View Analysis History
+        </a>
+
+        <a href="/dashboard" class="secondary-button">
+            Back to Dashboard
+        </a>
+
+    </div>
+
+</div>
+
+<style>
+
+.result-container {
+    max-width: 1100px;
+    margin: 25px auto;
+}
+
+.result-banner {
+    background: linear-gradient(120deg, #172f65, #1e40af);
+    padding: 30px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.success-icon {
+    width: 55px;
+    height: 55px;
+    background: #16a34a;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+.result-banner h2 {
+    margin-bottom: 10px;
+}
+
+.result-section {
+    background: #111827;
+    border: 1px solid #263449;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.result-section h2 {
+    color: #ffffff;
+    margin-bottom: 22px;
+}
+
+.result-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.result-item {
+    background: #0b1220;
+    border: 1px solid #263449;
+    border-radius: 9px;
+    padding: 22px;
+}
+
+.result-item span {
+    display: block;
+    color: #8eb7ec;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.result-item strong {
+    display: block;
+    color: #ffffff;
+    font-size: 19px;
+    overflow-wrap: anywhere;
+}
+
+.result-notice {
+    background: #172554;
+    border: 1px solid #1e40af;
+    border-radius: 10px;
+    padding: 22px;
+    color: #bfdbfe;
+    line-height: 1.7;
+    margin-bottom: 25px;
+}
+
+.result-notice h3 {
+    margin-bottom: 10px;
+}
+
+.result-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.primary-button,
+.secondary-button {
+    display: inline-block;
+    padding: 13px 20px;
+    border-radius: 7px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.primary-button {
+    background: #3478f6;
+    color: white;
+}
+
+.secondary-button {
+    background: #263449;
+    color: white;
+}
+
+.primary-button:hover {
+    background: #2563eb;
+}
+
+.secondary-button:hover {
+    background: #334155;
+}
+
+@media (max-width: 800px) {
+    .result-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    .result-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+</style>
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function() {
+
+    const savedResult =
+        sessionStorage.getItem("profileGuardResult");
+
+    const container =
+        document.getElementById("resultContainer");
+
+    if (!savedResult) {
+
+        container.innerHTML = `
+            <div class="result-section">
+                <h2>No Analysis Result Found</h2>
+                <p>Please analyse a profile before viewing this page.</p>
+                <a href="/analyze" class="primary-button">
+                    Analyze Profile
+                </a>
+            </div>
+        `;
+
+        return;
+    }
+
+    let result;
+
+    try {
+        result = JSON.parse(savedResult);
+    } catch (error) {
+
+        container.innerHTML = `
+            <div class="result-section">
+                <h2>Invalid Analysis Result</h2>
+                <p>Please analyse the profile again.</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    if (
+        result.status !== "success" ||
+        !result.database ||
+        !result.blockchain ||
+        !result.profile_analysis
+    ) {
+
+        container.innerHTML = `
+            <div class="result-section">
+                <h2>Incomplete Analysis Result</h2>
+                <p>Please submit the profile again.</p>
+            </div>
+        `;
+
+        return;
+    }
+
+    const database = result.database;
+    const blockchain = result.blockchain;
+    const analysis = result.profile_analysis;
+    const prediction = analysis.prediction || {};
+
+    document.getElementById("analysisId").textContent =
+        database.analysis_id ?? "-";
+
+    document.getElementById("profileId").textContent =
+        database.profile_id ?? "-";
+
+    document.getElementById("riskScore").textContent =
+        Number(database.risk_score).toFixed(2) + "%";
+
+    document.getElementById("riskCategory").textContent =
+        database.risk_category ?? "-";
+
+    document.getElementById("prediction").textContent =
+        prediction.prediction ?? "-";
+
+    document.getElementById("fakeProbability").textContent =
+        prediction.fake_label_probability !== undefined
+            ? (Number(prediction.fake_label_probability) * 100).toFixed(2) + "%"
+            : "-";
+
+    document.getElementById("blockIndex").textContent =
+        blockchain.block_index ?? "-";
+
+    document.getElementById("chainStatus").textContent =
+        blockchain.chain_valid === true
+            ? "Valid ✓"
+            : blockchain.chain_valid === false
+                ? "Invalid ✗"
+                : "Not verified";
+
+    document.getElementById("databaseStatus").textContent =
+        database.saved === true
+            ? "Saved ✓"
+            : "Not saved";
+
+    document.getElementById("resultNotice").textContent =
+        result.notice || prediction.notice ||
+        "Prediction is based on supplied profile information.";
+
+});
+
+</script>
+
+{% endblock %}

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}ProfileGuard{% endblock %}</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+
+        <div class="logo">
+            <span class="logo-icon">P</span>
+            ProfileGuard
+        </div>
+
+        <p class="sidebar-label">MAIN MENU</p>
+
+        <a href="/dashboard" class="nav-link">▦ Dashboard</a>
+
+        <a href="/analyze" class="nav-link">⌕ Analyze Profile</a>
+
+        <a href="/history" class="nav-link">◷ Analysis History</a>
+
+      <a href="/blockchain" class="nav-link">
+    ⬡ Blockchain Verification
+</a>
+
+
+        <div class="sidebar-bottom">
+            <span class="status-dot"></span>
+            System Online
+        </div>
+
+    </aside>
+
+    <main class="main-content">
+
+        <header class="topbar">
+            <div>
+                <h2>{% block heading %}Dashboard{% endblock %}</h2>
+                <p>Blockchain-Based Fake Profile Detection System</p>
+            </div>
+        </header>
+
+        {% block content %}{% endblock %}
+
+        <footer>
+            ProfileGuard © 2026 | Fake Profile Detection System
+        </footer>
+
+    </main>
+
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Blockchain Verification - ProfileGuard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Blockchain Verification</h1>
+    <p>Verify the integrity of stored profile analysis records.</p>
+</div>
+
+<div class="blockchain-container">
+
+    <!-- Verification Status -->
+    <div class="verification-banner" id="verificationBanner">
+
+        <div class="status-icon" id="statusIcon">◆</div>
+
+        <h2 id="statusTitle">Checking Blockchain...</h2>
+
+        <p id="statusDescription">
+            Connecting to the blockchain verification service.
+        </p>
+
+    </div>
+
+    <!-- Blockchain Statistics -->
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Total Blocks</span>
+            <strong id="blockCount">-</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Latest Block Index</span>
+            <strong id="latestBlock">-</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Chain Integrity</span>
+            <strong id="chainStatus">-</strong>
+        </div>
+
+    </div>
+
+    <!-- Verification Details -->
+    <div class="verification-card">
+
+        <h2>Verification Details</h2>
+
+        <div class="detail-row">
+            <span>Blockchain Status</span>
+            <strong id="blockchainStatus">Waiting...</strong>
+        </div>
+
+        <div class="detail-row">
+            <span>Integrity Check</span>
+            <strong id="integrityStatus">Waiting...</strong>
+        </div>
+
+        <div class="detail-row">
+            <span>Verification Time</span>
+            <strong id="verificationTime">-</strong>
+        </div>
+
+    </div>
+
+    <!-- Actions -->
+    <div class="action-buttons">
+
+        <button id="verifyButton" onclick="verifyBlockchain()">
+            Verify Blockchain Again
+        </button>
+
+        <a href="/dashboard" class="secondary-button">
+            Back to Dashboard
+        </a>
+
+    </div>
+
+    <div id="errorMessage"></div>
+
+</div>
+
+<style>
+
+.blockchain-container {
+    max-width: 1100px;
+    margin: 25px auto;
+}
+
+.verification-banner {
+    background: linear-gradient(120deg, #172f65, #1e40af);
+    padding: 35px;
+    border-radius: 12px;
+    text-align: center;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.status-icon {
+    font-size: 40px;
+    margin-bottom: 12px;
+    color: #60a5fa;
+}
+
+.verification-banner h2 {
+    margin-bottom: 10px;
+}
+
+.verification-banner p {
+    color: #dbeafe;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background: #111827;
+    border: 1px solid #263449;
+    border-radius: 10px;
+    padding: 25px;
+}
+
+.stat-card span {
+    display: block;
+    color: #8eb7ec;
+    margin-bottom: 14px;
+}
+
+.stat-card strong {
+    font-size: 25px;
+    color: white;
+}
+
+.verification-card {
+    background: #111827;
+    border: 1px solid #263449;
+    border-radius: 12px;
+    padding: 25px;
+}
+
+.verification-card h2 {
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 17px 0;
+    border-bottom: 1px solid #263449;
+}
+
+.detail-row span {
+    color: #8eb7ec;
+}
+
+.detail-row strong {
+    color: white;
+    text-align: right;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    flex-wrap: wrap;
+}
+
+#verifyButton,
+.secondary-button {
+    padding: 13px 20px;
+    border: none;
+    border-radius: 7px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+#verifyButton {
+    background: #3478f6;
+    color: white;
+}
+
+#verifyButton:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.secondary-button {
+    background: #263449;
+    color: white;
+}
+
+#errorMessage {
+    color: #ef4444;
+    margin-top: 20px;
+}
+
+@media (max-width: 700px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .detail-row {
+        flex-direction: column;
+    }
+}
+
+</style>
+
+<script>
+
+async function verifyBlockchain() {
+
+    const button = document.getElementById("verifyButton");
+    const error = document.getElementById("errorMessage");
+
+    button.disabled = true;
+    button.textContent = "Verifying...";
+    error.textContent = "";
+
+    document.getElementById("statusTitle").textContent =
+        "Verifying Blockchain...";
+
+    document.getElementById("statusDescription").textContent =
+        "Checking the integrity of stored blockchain records.";
+
+    try {
+
+        const response = await fetch("/api/blockchain/verify");
+
+        const data = await response.json();
+
+        if (!response.ok || data.status !== "success") {
+            throw new Error(
+                data.message || "Blockchain verification failed."
+            );
+        }
+
+        const valid = data.chain_valid === true;
+
+        document.getElementById("blockCount").textContent =
+            data.block_count;
+
+        document.getElementById("latestBlock").textContent =
+            data.latest_block_index;
+
+        document.getElementById("chainStatus").textContent =
+            valid ? "Valid ✓" : "Invalid ✗";
+
+        document.getElementById("blockchainStatus").textContent =
+            valid ? "Operational" : "Integrity Failed";
+
+        document.getElementById("integrityStatus").textContent =
+            valid ? "Verified ✓" : "Verification Failed ✗";
+
+        document.getElementById("verificationTime").textContent =
+            new Date().toLocaleString();
+
+        document.getElementById("statusIcon").textContent =
+            valid ? "✓" : "✗";
+
+        document.getElementById("statusIcon").style.color =
+            valid ? "#22c55e" : "#ef4444";
+
+        document.getElementById("statusTitle").textContent =
+            valid ? "Blockchain Verified Successfully" :
+                    "Blockchain Integrity Check Failed";
+
+        document.getElementById("statusDescription").textContent =
+            valid
+                ? "All checked blockchain links are valid."
+                : "The blockchain integrity check detected an invalid chain.";
+
+        document.getElementById("verificationBanner").style.background =
+            valid
+                ? "linear-gradient(120deg, #14532d, #166534)"
+                : "linear-gradient(120deg, #7f1d1d, #991b1b)";
+
+    } catch (err) {
+
+        error.textContent = err.message;
+
+        document.getElementById("statusTitle").textContent =
+            "Verification Unavailable";
+
+        document.getElementById("statusDescription").textContent =
+            "Unable to complete blockchain verification.";
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Verify Blockchain Again";
+
+    }
+
+}
+
+document.addEventListener("DOMContentLoaded", verifyBlockchain);
+
+</script>
+
+{% endblock %}

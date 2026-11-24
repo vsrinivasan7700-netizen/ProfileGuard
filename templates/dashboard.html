@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | ProfileGuard{% endblock %}
+
+{% block content %}
+
+<section class="welcome-section">
+
+    <div>
+        <h1>Welcome to ProfileGuard</h1>
+        <p>Monitor and manage social profile analysis.</p>
+    </div>
+
+    <a href="/analyze" class="primary-button">
+        + Analyze New Profile
+    </a>
+
+</section>
+
+
+<!-- DASHBOARD STATISTICS -->
+
+<section class="stats-grid">
+
+    <div class="stat-card">
+        <div class="stat-icon blue">▦</div>
+        <p>Total Analyses</p>
+        <h2>{{ total_profiles }}</h2>
+        <span>Recorded analyses</span>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon green">✓</div>
+        <p>Low Risk</p>
+        <h2>{{ risk_counts.Low }}</h2>
+        <span>Low model risk score</span>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon orange">!</div>
+        <p>Medium Risk</p>
+        <h2>{{ risk_counts.Medium }}</h2>
+        <span>Medium model risk score</span>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon red">⚠</div>
+        <p>High Risk</p>
+        <h2>{{ risk_counts.High }}</h2>
+        <span>High model risk score</span>
+    </div>
+
+</section>
+
+
+<!-- CHART AND BLOCKCHAIN -->
+
+<section class="content-grid">
+
+    <div class="panel">
+
+        <h3>Risk Distribution</h3>
+
+        <p class="muted">Profile analysis overview</p>
+
+        <div class="chart-container">
+            <canvas id="riskChart"></canvas>
+        </div>
+
+    </div>
+
+
+    <div class="panel blockchain-panel">
+
+        <div class="blockchain-icon">⬡</div>
+
+        <h3>Blockchain Network</h3>
+
+        <p>
+            Analysis records are stored in a persistent
+            hash-linked ledger.
+        </p>
+
+        <a href="/blockchain" class="secondary-button">
+            Verify Blockchain
+        </a>
+
+    </div>
+
+</section>
+
+
+<!-- RECENT ANALYSIS -->
+
+<section class="panel history-panel">
+
+    <h3>Recent Analysis</h3>
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Platform</th>
+                    <th>Username</th>
+                    <th>Risk Score</th>
+                    <th>Risk Category</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for record in recent_records %}
+
+                <tr>
+
+                    <td>#{{ record.id }}</td>
+
+                    <td>{{ record.platform }}</td>
+
+                    <td>{{ record.platform_user_id }}</td>
+
+                    <td>
+                        {{ "%.2f"|format(record.risk_score) }}%
+                    </td>
+
+                    <td>
+                        <span class="risk-badge {{ record.risk_category|lower }}">
+                            {{ record.risk_category }}
+                        </span>
+                    </td>
+
+                    <td>{{ record.analyzed_at }}</td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="6">
+                        No analysis records available.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+<style>
+
+.chart-container {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    margin-top: 20px;
+}
+
+.chart-container canvas {
+    max-width: 100%;
+}
+
+</style>
+
+{% endblock %}
+
+
+{% block scripts %}
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const canvas = document.getElementById("riskChart");
+
+    if (!canvas) {
+        console.error("Risk chart canvas not found.");
+        return;
+    }
+
+    if (typeof Chart === "undefined") {
+        console.error("Chart.js library is not loaded.");
+        return;
+    }
+
+    const riskData = {
+        low: Number({{ risk_counts.Low }}),
+        medium: Number({{ risk_counts.Medium }}),
+        high: Number({{ risk_counts.High }})
+    };
+
+    new Chart(canvas, {
+
+        type: "doughnut",
+
+        data: {
+
+            labels: [
+                "Low Risk",
+                "Medium Risk",
+                "High Risk"
+            ],
+
+            datasets: [{
+
+                data: [
+                    riskData.low,
+                    riskData.medium,
+                    riskData.high
+                ],
+
+                backgroundColor: [
+                    "#22c55e",
+                    "#f59e0b",
+                    "#ef4444"
+                ],
+
+                borderWidth: 0,
+
+                hoverOffset: 8
+
+            }]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false,
+
+            cutout: "65%",
+
+            plugins: {
+
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "#dbeafe",
+                        padding: 20
+                    }
+                },
+
+                tooltip: {
+                    enabled: true
+                }
+
+            }
+
+        }
+
+    });
+
+});
+
+</script>
+
+{% endblock %}

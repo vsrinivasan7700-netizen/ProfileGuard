@@ -1,0 +1,469 @@
+{% extends "base.html" %}
+
+{% block title %}Analyze Profile - ProfileGuard{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Analyze Social Profile</h1>
+    <p>Submit profile information for fake profile detection.</p>
+</div>
+
+<div class="analysis-container">
+
+    <div class="analysis-card">
+
+        <h2>Profile Information</h2>
+
+        <form id="analyzeForm">
+
+            <div class="form-group">
+                <label for="platform">Social Media Platform</label>
+                <select id="platform" required>
+                    <option value="">Select Platform</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="x">X (Twitter)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="profile_url">Profile URL</label>
+                <input
+                    type="url"
+                    id="profile_url"
+                    placeholder="https://www.instagram.com/username/"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input
+                    type="text"
+                    id="full_name"
+                    placeholder="Enter profile full name"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="biography">Biography</label>
+                <textarea
+                    id="biography"
+                    placeholder="Enter profile biography"
+                    rows="4"
+                ></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="external_url">External URL</label>
+                <input
+                    type="url"
+                    id="external_url"
+                    placeholder="https://example.com"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="posts">Number of Posts</label>
+                <input
+                    type="number"
+                    id="posts"
+                    min="0"
+                    step="1"
+                    value="25"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="followers">Number of Followers</label>
+                <input
+                    type="text"
+                    id="followers"
+                    value="300"
+                    placeholder="Example: 1.5M, 250K, 1B"
+                    autocomplete="off"
+                    required
+                >
+                <small>Supports K (Thousand), M (Million), B (Billion)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="following">Number of Following</label>
+                <input
+                    type="text"
+                    id="following"
+                    value="250"
+                    placeholder="Example: 1.5M, 250K, 1B"
+                    autocomplete="off"
+                    required
+                >
+                <small>Supports K (Thousand), M (Million), B (Billion)</small>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="profile_picture" checked>
+                    Profile has a picture
+                </label>
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label>
+                    <input type="checkbox" id="private">
+                    Private account
+                </label>
+            </div>
+
+            <button type="submit" id="analyzeButton">
+                Analyze Profile
+            </button>
+
+        </form>
+
+        <div id="loadingMessage" style="display:none;">
+            Analyzing profile. Please wait...
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+
+.analysis-container {
+    max-width: 850px;
+    margin: 25px auto;
+}
+
+.analysis-card {
+    background: #111827;
+    border: 1px solid #263449;
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.analysis-card h2 {
+    margin-bottom: 25px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #a9c0dd;
+}
+
+.form-group input:not([type="checkbox"]),
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    background: #0b1220;
+    color: white;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3478f6;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 7px;
+    color: #8eb7ec;
+    font-size: 12px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#analyzeButton {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 7px;
+    background: #3478f6;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#analyzeButton:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+#loadingMessage {
+    margin-top: 20px;
+    color: #60a5fa;
+}
+
+</style>
+
+<script>
+
+// Maximum supported follower/following count
+const MAX_COUNT = 999999999999;
+
+
+// Convert abbreviated counts into numbers
+function parseCount(value) {
+
+    const input = value.trim().toUpperCase().replace(/,/g, "");
+
+    const match = input.match(/^(\d+(?:\.\d+)?)\s*([KMB])?$/);
+
+    if (!match) {
+        throw new Error(
+            "Invalid number. Use formats such as 1.5M, 250K or 1B."
+        );
+    }
+
+    const number = Number(match[1]);
+
+    const multiplier = {
+        K: 1000,
+        M: 1000000,
+        B: 1000000000
+    };
+
+    const converted = number * (multiplier[match[2]] || 1);
+
+    if (
+        !Number.isSafeInteger(converted) ||
+        converted < 0 ||
+        converted > MAX_COUNT
+    ) {
+        throw new Error("The entered count is outside the supported range.");
+    }
+
+    return converted;
+}
+
+
+document.getElementById("analyzeForm").addEventListener(
+    "submit",
+    async function(event) {
+
+        event.preventDefault();
+
+        const button = document.getElementById("analyzeButton");
+        const loading = document.getElementById("loadingMessage");
+
+        const profileUrl =
+            document.getElementById("profile_url").value.trim();
+
+        const platform =
+            document.getElementById("platform").value;
+
+
+        // Validate profile URL
+
+        let hostname;
+
+        try {
+            hostname = new URL(profileUrl).hostname.toLowerCase();
+        } catch {
+            alert("Please enter a valid profile URL.");
+            return;
+        }
+
+
+        // Validate selected platform
+
+        const validHosts = {
+
+            instagram: [
+                "instagram.com",
+                "www.instagram.com"
+            ],
+
+            facebook: [
+                "facebook.com",
+                "www.facebook.com",
+                "m.facebook.com"
+            ],
+
+            x: [
+                "x.com",
+                "www.x.com",
+                "twitter.com",
+                "www.twitter.com"
+            ]
+
+        };
+
+
+        if (
+            !validHosts[platform] ||
+            !validHosts[platform].includes(hostname)
+        ) {
+
+            alert("The selected platform does not match the profile URL.");
+            return;
+
+        }
+
+
+        // Read post count
+
+        const postsInput = document.getElementById("posts");
+
+        const posts = Number(postsInput.value);
+
+
+        if (
+            postsInput.value.trim() === "" ||
+            !Number.isSafeInteger(posts) ||
+            posts < 0
+        ) {
+
+            alert("Please enter a valid number of posts.");
+            postsInput.focus();
+            return;
+
+        }
+
+
+        // Convert followers and following
+
+        let followers;
+        let following;
+
+        try {
+
+            followers = parseCount(
+                document.getElementById("followers").value
+            );
+
+            following = parseCount(
+                document.getElementById("following").value
+            );
+
+        } catch (error) {
+
+            alert(error.message);
+            return;
+
+        }
+
+
+        // Collect profile information
+
+        const profileData = {
+
+            full_name:
+                document.getElementById("full_name").value.trim(),
+
+            biography:
+                document.getElementById("biography").value.trim(),
+
+            external_url:
+                document.getElementById("external_url").value.trim() || null,
+
+            has_profile_picture:
+                document.getElementById("profile_picture").checked,
+
+            is_private:
+                document.getElementById("private").checked,
+
+            posts: posts,
+
+            followers: followers,
+
+            following: following
+
+        };
+
+
+        button.disabled = true;
+        loading.style.display = "block";
+
+
+        try {
+
+            const response = await fetch(
+                "/api/analyze-profile-pipeline",
+                {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+
+                        profile_url: profileUrl,
+
+                        profile_data: profileData
+
+                    })
+
+                }
+            );
+
+
+            const result = await response.json();
+
+
+            if (!response.ok || result.status !== "success") {
+
+                alert(
+                    result.message ||
+                    result.error ||
+                    "Profile analysis failed. Check the Flask terminal."
+                );
+
+                return;
+
+            }
+
+
+            // Store result and redirect
+
+            sessionStorage.setItem(
+                "profileGuardResult",
+                JSON.stringify(result)
+            );
+
+            window.location.href = "/result";
+
+
+        } catch (error) {
+
+            console.error("Analysis error:", error);
+
+            alert(
+                "Unable to connect to the Flask server. Check that Flask is running."
+            );
+
+
+        } finally {
+
+            button.disabled = false;
+
+            loading.style.display = "none";
+
+        }
+
+    }
+);
+
+</script>
+
+{% endblock %}
