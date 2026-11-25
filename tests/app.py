@@ -1,11 +1,12 @@
 import os
 import sys
 import json
+import secrets
 from pathlib import Path
 
 import pymysql
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template,send_file
 # ==========================================================
 # PROJECT CONFIGURATION
 # ==========================================================
@@ -894,6 +895,55 @@ def result_page():
 @app.route("/blockchain", methods=["GET"])
 def blockchain_page():
     return render_template("blockchain.html")
+
+# ==========================================================
+# SECURE BLOCKCHAIN EXPORT
+# ==========================================================
+
+@app.route("/api/blockchain/export", methods=["GET"])
+def export_blockchain():
+
+    expected_token = os.getenv("BLOCKCHAIN_EXPORT_TOKEN")
+    provided_token = request.headers.get("X-Export-Token", "")
+
+    if not expected_token:
+        return jsonify({
+            "status": "error",
+            "message": "Export token is not configured."
+        }), 503
+
+    if not secrets.compare_digest(provided_token, expected_token):
+        return jsonify({
+            "status": "error",
+            "message": "Unauthorized."
+        }), 401
+
+    try:
+        from blockchain.blockchain import Blockchain
+
+        chain = Blockchain()
+
+        if not chain.is_chain_valid():
+            return jsonify({
+                "status": "error",
+                "message": "Blockchain validation failed."
+            }), 500
+
+        return jsonify({
+            "status": "success",
+            "block_count": len(chain.chain),
+            "latest_block_index": chain.get_latest_block().index,
+            "chain_valid": True,
+            "blocks": chain.export_chain()
+        }), 200
+
+    except Exception:
+        app.logger.exception("Blockchain export failed")
+
+        return jsonify({
+            "status": "error",
+            "message": "Blockchain export failed."
+        }), 500
 
 if __name__ == "__main__":
 
