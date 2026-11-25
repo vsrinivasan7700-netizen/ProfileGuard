@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pymysql
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request, render_template,send_file
+from flask import Flask, jsonify, request, render_template,send_file, redirect, url_for
 # ==========================================================
 # PROJECT CONFIGURATION
 # ==========================================================
@@ -213,13 +213,7 @@ def save_analysis_to_database(result, blockchain_info):
 
 @app.route("/", methods=["GET"])
 def home():
-
-    return jsonify({
-
-        "message": "Blockchain-Based Fake Profile Detection API",
-
-        "status": "running"
-    })
+    return redirect(url_for("dashboard"))
 
 
 # ==========================================================
@@ -944,6 +938,85 @@ def export_blockchain():
             "status": "error",
             "message": "Blockchain export failed."
         }), 500
+
+# ==========================================================
+# SECURE BLOCKCHAIN RESTORE
+# ==========================================================
+
+@app.route("/api/blockchain/restore", methods=["POST"])
+def restore_blockchain():
+
+    expected_token = os.getenv("BLOCKCHAIN_RESTORE_TOKEN")
+    provided_token = request.headers.get("X-Restore-Token", "")
+
+    if not expected_token:
+        return jsonify({
+            "status": "error",
+            "message": "Restore token is not configured."
+        }), 503
+
+    if not secrets.compare_digest(provided_token, expected_token):
+        return jsonify({
+            "status": "error",
+            "message": "Unauthorized."
+        }), 401
+
+    try:
+        from blockchain.blockchain import Block, Blockchain, STORAGE_PATH
+
+        data = request.get_json(silent=True)
+
+        if not isinstance(data, dict):
+            return jsonify({
+                "status": "error",
+                "message": "Invalid JSON data."
+            }), 400
+
+        saved_blocks = data.get("blocks")
+
+        if not isinstance(saved_blocks, list) or not saved_blocks:
+            return jsonify({
+                "status": "error",
+                "message": "No blockchain records supplied."
+            }), 400
+
+        if STORAGE_PATH.exists() and STORAGE_PATH.stat().st_size > 0:
+            return jsonify({
+                "status": "error",
+                "message": "Storage already contains data. Refusing to overwrite."
+            }), 409
+
+        chain = Blockchain.__new__(Blockchain)
+        chain.storage_path = STORAGE_PATH
+        chain.chain = [
+            Block.from_dict(block)
+            for block in saved_blocks
+        ]
+
+        if not chain.is_chain_valid():
+            return jsonify({
+                "status": "error",
+                "message": "Blockchain validation failed."
+            }), 400
+
+        chain.save_chain()
+
+        return jsonify({
+            "status": "success",
+            "block_count": len(chain.chain),
+            "latest_block_index": chain.get_latest_block().index,
+            "chain_valid": chain.is_chain_valid(),
+            "storage_path": str(STORAGE_PATH)
+        }), 200
+
+    except Exception:
+        app.logger.exception("Blockchain restore failed")
+
+        return jsonify({
+            "status": "error",
+            "message": "Blockchain restore failed."
+        }), 500
+
 
 if __name__ == "__main__":
 
