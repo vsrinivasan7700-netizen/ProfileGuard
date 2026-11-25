@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,7 +11,13 @@ from pathlib import Path
 # ==========================================================
 
 BLOCKCHAIN_DIR = Path(__file__).resolve().parent
-STORAGE_PATH = BLOCKCHAIN_DIR / "chain_storage.json"
+
+STORAGE_PATH = Path(
+    os.getenv(
+        "BLOCKCHAIN_STORAGE_PATH",
+        str(BLOCKCHAIN_DIR / "chain_storage.json")
+    )
+)
 
 
 # ==========================================================
