@@ -30,23 +30,34 @@ app = Flask(
 # ==========================================================
 
 def get_db_connection():
+    load_dotenv()
 
-    password = os.getenv("MYSQL_PASSWORD")
-
-    if not password:
-        raise RuntimeError(
-            "MYSQL_PASSWORD is missing from the project .env file."
-        )
-
-    return pymysql.connect(
-        host="localhost",
-        port=3306,
-        user="root",
-        password=password,
-        database="fake_profile_detection",
-        cursorclass=pymysql.cursors.DictCursor
+    # Railway production database settings
+    db_host = os.getenv("MYSQLHOST", "localhost")
+    db_port = int(os.getenv("MYSQLPORT", "3306"))
+    db_user = os.getenv("MYSQLUSER", "root")
+    db_password = (
+        os.getenv("MYSQLPASSWORD")
+        or os.getenv("MYSQL_PASSWORD")
+    )
+    db_name = (
+        os.getenv("MYSQLDATABASE")
+        or os.getenv("MYSQL_DATABASE")
+        or "fake_profile_detection"
     )
 
+    if not db_password:
+        raise RuntimeError("MySQL password is not configured.")
+
+    return pymysql.connect(
+        host=db_host,
+        port=db_port,
+        user=db_user,
+        password=db_password,
+        database=db_name,
+        cursorclass=pymysql.cursors.DictCursor,
+        connect_timeout=10
+    )
 
 # ==========================================================
 # SAVE ANALYSIS RESULT TO MYSQL
